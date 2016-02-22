@@ -32,3 +32,14 @@ Polynomial (n-order)
 Gaussian  
 Parabolic  
 
+##Todo
+Correct and clean up attribution    
+Fix up Gaussian fit  
+Fix up Parabolic fit  
+Implement Cubic Spline  
+Implement 4PL  
+Cache sums for curve fit  
+Error handling  
+File routines to load and save / export in gnuplot format  
+
+
