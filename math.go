@@ -1,4 +1,4 @@
-package timeseries
+package analytics
 
 import "math"
 

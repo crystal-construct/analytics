@@ -1,4 +1,4 @@
-package timeseries
+package analytics
 
 type Series struct {
 	Data [][]float64
@@ -110,13 +110,6 @@ func (ts *Series) Last(n int) *Series {
 	newts := &Series{}
 	newts.Use(data)
 	return newts
-}
-
-func (ts *Series) FromVolumeTrades(data []VolumeTrade) {
-	ts.Data = make([][]float64, len(data))
-	for i, j := range data {
-		ts.Data[i] = []float64{float64(j.Time), j.Price, j.Volume}
-	}
 }
 
 func (ts *Series) ToValueArray(length int, offset int) []float64 {
