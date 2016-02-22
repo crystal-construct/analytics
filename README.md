@@ -1,5 +1,5 @@
-# data-analytics
-Data analytics and curve fitting library in go.  
+# analytics
+Analytics and curve fitting library in go.  
 The library provides a Series structure that can be initialized with a [][]float64 containing x/y data.  
 Once initialized, functions can be applied to create new Series, or curve fitting can be applied to
 interpolate or (depending on the algorithm) extrapolate data points.
@@ -18,7 +18,7 @@ Move - Transpose a series
 RecentTrends - Splices smoothed data into multiple series, each describing a trend.  
 Last - Extracts a copy of the last n points from the end of a series.  
 From - Extracts a copy of data points starting from an arbitrary x value.  
-Append - Joins two series together to forma new series.
+Append - Joins two series together to form a new series.
 
 ##Misc Functions
 ToValueArray - Extracts a 1D array of y-values  
