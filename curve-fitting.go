@@ -14,6 +14,7 @@ type FitParameters struct {
 
 const (
 	FitTypeLinear = iota
+	FitTypeLinearThroughOrigin
 	FitTypeLogarithmic
 	FitTypePower
 	FitTypeExponential
@@ -22,9 +23,6 @@ const (
 	FitTypeParabolic
 )
 
-/**
- * Code extracted from https://github.com/Tom-Alexander/regression-js/
- */
 func (ts *Series) FitExponential() (params FitParameters) {
 	xoffset := ts.Data[0][0] - 1
 	yoffset := ts.Min - 1
@@ -54,9 +52,6 @@ func (ts *Series) FitExponential() (params FitParameters) {
 }
 
 /**
- * Code extracted from https://github.com/Tom-Alexander/regression-js/
- * Human readable formulas:
- *
  *              N * Σ(XY) - Σ(X)
  * intercept = ---------------------
  *              N * Σ(X^2) - Σ(X)^2
@@ -72,13 +67,13 @@ func (ts *Series) FitLinear() (params FitParameters) {
 	N := float64(len(data))
 
 	for n := range data {
-		time := data[n][0] - xoffset
-		value := data[n][1] - yoffset
-		sum[0] += time          //Σ(X)
-		sum[1] += value         //Σ(Y)
-		sum[2] += time * time   //Σ(X^2)
-		sum[3] += time * value  //Σ(XY)
-		sum[4] += value * value //Σ(Y^2)
+		x := data[n][0] - xoffset
+		y := data[n][1] - yoffset
+		sum[0] += x     //Σ(X)
+		sum[1] += y     //Σ(Y)
+		sum[2] += x * x //Σ(X^2)
+		sum[3] += x * y //Σ(XY)
+		sum[4] += y * y //Σ(Y^2)
 	}
 
 	var gradient = (N*sum[3] - sum[0]*sum[1]) / (N*sum[2] - sum[0]*sum[0])
@@ -92,9 +87,28 @@ func (ts *Series) FitLinear() (params FitParameters) {
 	return
 }
 
-/**
- *  Code extracted from https://github.com/Tom-Alexander/regression-js/
- */
+func (ts *Series) FitLinearThroughOrigin() (params FitParameters) {
+	xoffset := ts.Data[0][0] - 1
+	yoffset := ts.Min - 1
+	data := ts.Data
+	sum := []float64{0, 0, 0, 0, 0}
+
+	for n := 0; n < len(data); n++ {
+		x := data[n][0] - xoffset
+		y := data[n][1] - yoffset
+		sum[0] += x * x //sumSqX
+		sum[1] += x * y //sumXY
+	}
+
+	var gradient = sum[1] / sum[0]
+
+	params = FitParameters{
+		fittype: FitTypeLinearThroughOrigin,
+		values:  []float64{gradient},
+	}
+	return params
+}
+
 func (ts *Series) FitLogarithmic() (params FitParameters) {
 	xoffset := ts.Data[0][0] - 1
 	yoffset := ts.Min - 1
@@ -103,12 +117,12 @@ func (ts *Series) FitLogarithmic() (params FitParameters) {
 	N := float64(len(data))
 
 	for n := range data {
-		time := data[n][0] - xoffset
-		value := data[n][1] - yoffset
-		sum[0] += math.Log(time)
-		sum[1] += value * math.Log(time)
-		sum[2] += value
-		sum[3] += math.Pow(math.Log(time), 2)
+		x := data[n][0] - xoffset
+		y := data[n][1] - yoffset
+		sum[0] += math.Log(x)
+		sum[1] += y * math.Log(x)
+		sum[2] += y
+		sum[3] += math.Pow(math.Log(x), 2)
 	}
 
 	var B = (N*sum[1] - sum[2]*sum[0]) / (N*sum[3] - sum[0]*sum[0])
@@ -121,9 +135,6 @@ func (ts *Series) FitLogarithmic() (params FitParameters) {
 	return
 }
 
-/**
- * Code extracted from https://github.com/Tom-Alexander/regression-js/
- */
 func (ts *Series) FitPower() (params FitParameters) {
 	xoffset := ts.Data[0][0] - 1
 	yoffset := ts.Min - 1
@@ -132,12 +143,12 @@ func (ts *Series) FitPower() (params FitParameters) {
 	N := float64(len(data))
 
 	for n := range data {
-		time := data[n][0] - xoffset
-		value := data[n][1] - yoffset
-		sum[0] += math.Log(time)
-		sum[1] += math.Log(value) * math.Log(time)
-		sum[2] += math.Log(value)
-		sum[3] += math.Pow(math.Log(time), 2)
+		x := data[n][0] - xoffset
+		y := data[n][1] - yoffset
+		sum[0] += math.Log(x)
+		sum[1] += math.Log(y) * math.Log(x)
+		sum[2] += math.Log(y)
+		sum[3] += math.Pow(math.Log(x), 2)
 	}
 
 	var B = (N*sum[1] - sum[2]*sum[0]) / (N*sum[3] - sum[0]*sum[0])
@@ -150,14 +161,10 @@ func (ts *Series) FitPower() (params FitParameters) {
 	return
 }
 
-/**
- * Code extracted from https://github.com/Tom-Alexander/regression-js/
- */
 func (ts *Series) FitPolynomial(order int) (params FitParameters) {
 	xoffset := ts.Data[0][0] - 1
 	yoffset := ts.Min - 1
 	data := ts.Data
-	//var lhs = [], rhs = [], results = [], a = 0, b = 0, k = order + 1;
 	rhs := [][]float64{}
 	lhs := []float64{}
 	k := order + 1
@@ -208,6 +215,9 @@ func Extrapolate(params FitParameters, x float64) float64 {
 		gradient := params.values[0]
 		intercept := params.values[1]
 		return (x-params.xoffset)*gradient + intercept
+	case FitTypeLinearThroughOrigin:
+		Gradient := params.values[0]
+		return x * Gradient
 	case FitTypeLogarithmic:
 		A := params.values[0]
 		B := params.values[1]
@@ -227,6 +237,7 @@ func Extrapolate(params FitParameters, x float64) float64 {
 		Width := params.values[2]
 		return (Height * math.Exp(-1*math.Pow(((x-params.xoffset)-Position)/(0.6006*Width), 2))) + params.yoffset
 	}
+
 	panic(fmt.Errorf("No Fit Available"))
 }
 
@@ -235,13 +246,7 @@ func (ts *Series) FitGaussianParabolic() (params []FitParameters) {
 	yoffset := ts.Min - 1
 	data := ts.Data
 	var n float64 = float64(len(data))
-	var sumx float64 = 0
-	var sumy float64 = 0
-	var sumxy float64 = 0
-	var sumx2 float64 = 0
-	var sumx3 float64 = 0
-	var sumx4 float64 = 0
-	var sumx2y float64 = 0
+	var sumx, sumy, sumxy, sumx2, sumx3, sumx4, sumx2y float64
 	for _, i := range data {
 		x := i[0] - xoffset
 		y := i[1] - yoffset
@@ -280,12 +285,6 @@ func (ts *Series) FitGaussianParabolic() (params []FitParameters) {
 	return
 }
 
-/**
- * @author: Ignacio Vazquez
- * Based on
- * - http://commons.apache.org/proper/commons-math/download_math.cgi LoesInterpolator.java
- * - https://gist.github.com/avibryant/1151823
- */
 func (ts *Series) FitLoess(bandwidth float64) (points *Series) {
 	data := ts.Data
 	xval := make([]float64, len(data))
@@ -369,45 +368,29 @@ func (ts *Series) FitLoess(bandwidth float64) (points *Series) {
 	for i, j := range xval {
 		res2 = append(res2, []float64{j, res[i]})
 	}
-	newts := &Series{}
-	newts.Use(res2)
+	newts := NewSeriesFrom(res2)
 	points = newts
 	return
 }
 
-/**
- * @author Ignacio Vazquez
- * See http://en.wikipedia.org/wiki/Coefficient_of_determination for theaorical details
- * (R squared)
- */
 func (ts *Series) CoefficientOfDetermination(pred [][]float64) float64 {
 	data := ts.Data
-	var SSE, SSYY, mean float64
-	N := len(data)
-
-	// Calc the mean
+	var sse, ssyy float64
 	for i := range data {
-		mean += data[i][1]
+		x := data[i][1]
+		ssyy += math.Pow(x-pred[i][1], 2)
+		sse += math.Pow(x-ts.Mean, 2)
 	}
-	mean /= float64(N)
-
-	// Calc the coefficent of determination
-	for i := range data {
-		SSYY += math.Pow(data[i][1]-pred[i][1], 2)
-		SSE += math.Pow(data[i][1]-mean, 2)
-	}
-	return 1 - (SSYY / SSE)
+	return 1 - (ssyy / sse)
 }
 
 func (ts *Series) StandardError(pred [][]float64) float64 {
 	data := ts.Data
 	var SE float64 = 0
-	N := len(data)
-
 	for i := range data {
 		SE += math.Pow(data[i][1]-pred[i][1], 2)
 	}
-	SE = math.Sqrt(SE / (float64(N) - 2))
+	SE = math.Sqrt(SE / (float64(ts.Len) - 2))
 
 	return SE
 }
@@ -425,8 +408,8 @@ func array_unique(values []float64) []float64 {
 }
 
 func tricube(x float64) float64 {
-	var tmp = 1 - x*x*x
-	return tmp * tmp * tmp
+	var tmp = 1 - math.Pow(x, 3)
+	return math.Pow(tmp, 3)
 }
 
 /**

@@ -4,10 +4,10 @@ import (
 	"math"
 )
 
-// Iterative Noise Removal
+//Iterative Noise Removal
 func (ts *Series) Smoother(period int) *Series {
 	var l int = len(ts.Data)
-	// Reset the buffer
+
 	buffer := make([][]float64, len(ts.Data))
 	for i, j := range ts.Data {
 		buffer[i] = []float64{j[0], j[1]}
@@ -21,31 +21,24 @@ func (ts *Series) Smoother(period int) *Series {
 			}
 		}
 	}
-	t := &Series{}
-	t.Use(buffer)
-	return t
+	return NewSeriesFrom(buffer)
 }
 
-// Pixelize - Domain reduction
-func (ts *Series) Pixelize(grid int) *Series {
+//Quantization
+func (ts *Series) Quantize(grid int) *Series {
 
-	// Calculate the grid values
 	var min = ts.Min
 	var max = ts.Max
-	var tile = (max - min) / float64(grid)
+	var resolution = (max - min) / float64(grid)
 	buffer := make([][]float64, len(ts.Data))
 	for i, datapoint := range ts.Data {
-		buffer[i] = []float64{datapoint[0], round(datapoint[1]/tile) * tile}
+		buffer[i] = []float64{datapoint[0], round(datapoint[1]/resolution) * resolution}
 	}
-	t := &Series{}
-	t.Use(buffer)
-	return t
+	return NewSeriesFrom(buffer)
 }
 
-// DSL, iTrend
+//iTrend
 func (ts *Series) ITrend(alpha float64) (itrendSeries *Series) {
-	// By Ehler
-	// http://www.davenewberg.com/Trading/TS_Code/Ehlers_Indicators/iTrend_Ind.html
 	l := len(ts.Data)
 
 	var buffer = make([][]float64, 3)
@@ -69,19 +62,33 @@ func (ts *Series) ITrend(alpha float64) (itrendSeries *Series) {
 				2*buffer[i][1] - buffer[i-2][1],
 			})
 	}
-	t := &Series{}
-	t.Use(buffer)
-	u := &Series{}
-	u.Use(trigger)
+	t := NewSeriesFrom(buffer)
+	//u := NewSeriesFrom(trigger)
 	return t
 }
 
+// Standard deviation
 func (ts *Series) StDev() float64 {
+	if len(ts.Data) == 0 {
+		return 0
+	}
 	var sdsum float64 = 0
 	for _, j := range ts.Data {
 		sdsum += math.Pow(j[1]-ts.Mean, 2)
 	}
 	return math.Sqrt(sdsum / float64(len(ts.Data)))
+}
+
+// Mean deviation
+func (ts *Series) MeanDev() float64 {
+	if len(ts.Data) == 0 {
+		return 0
+	}
+	var mdsum float64 = 0
+	for _, j := range ts.Data {
+		mdsum += math.Abs(j[1] - ts.Mean)
+	}
+	return mdsum / float64(ts.Len)
 }
 
 // Moving Average
@@ -99,11 +106,10 @@ func (ts *Series) Ma(period int) *Series {
 		}
 		buffer = append(buffer, []float64{ts.Data[i][0], sum / float64(period)})
 	}
-	t := &Series{}
-	t.Use(buffer)
-	return t
+	return NewSeriesFrom(buffer)
 }
 
+//Exponential moving average
 func (ts *Series) Ema(period int) *Series {
 
 	var l int = len(ts.Data)
@@ -117,11 +123,10 @@ func (ts *Series) Ema(period int) *Series {
 	for i := period; i < l; i++ {
 		buffer = append(buffer, []float64{ts.Data[i][0], (ts.Data[i][1]-ts.Data[i-1][1])*m + ts.Data[i-1][1]})
 	}
-	t := &Series{}
-	t.Use(buffer)
-	return t
+	return NewSeriesFrom(buffer)
 }
 
+//Linear weighted moving average
 func (ts *Series) Lwma(period int) *Series {
 
 	var l int = len(ts.Data)
@@ -140,11 +145,10 @@ func (ts *Series) Lwma(period int) *Series {
 		}
 		buffer = append(buffer, []float64{ts.Data[i][0], sum / float64(n)})
 	}
-	t := &Series{}
-	t.Use(buffer)
-	return t
+	return NewSeriesFrom(buffer)
 }
 
+//Recent trends
 func (ts *Series) RecentTrends(n int) []*Series {
 	ret := []*Series{}
 	var marker int = ts.Len
@@ -157,12 +161,11 @@ func (ts *Series) RecentTrends(n int) []*Series {
 			trend = 1
 		}
 		if (trend != oldTrend && oldTrend != 0) || i == 0 {
-			newts := &Series{}
 			newdata := make([][]float64, marker-i-1)
 			for j := range newdata {
 				newdata[j] = []float64{ts.Data[i+1+j][0], ts.Data[i+1+j][1]}
 			}
-			newts.Use(newdata)
+			newts := NewSeriesFrom(newdata)
 			ret = append(ret, newts)
 			marker = i + 1
 			found++
@@ -175,6 +178,7 @@ func (ts *Series) RecentTrends(n int) []*Series {
 	return nil
 }
 
+//Peak and trough data points
 func (ts *Series) TrendChanges() *Series {
 	buffer := make([][]float64, 0)
 	l := len(ts.Data)
@@ -186,7 +190,5 @@ func (ts *Series) TrendChanges() *Series {
 			dirup = newdir
 		}
 	}
-	t := &Series{}
-	t.Use(buffer)
-	return t
+	return NewSeriesFrom(buffer)
 }
