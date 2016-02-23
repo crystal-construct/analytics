@@ -1,0 +1,11 @@
+Portions of regression code
+Based on:
+translation from https://github.com/Tom-Alexander/regression-js/
+License:
+MIT license
+
+LOESS
+Based on:
+http://commons.apache.org/proper/commons-math/download_math.cgi LoesInterpolator.java
+License:
+Apache License 2.0
