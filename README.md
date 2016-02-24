@@ -48,7 +48,7 @@ ITrend - John Ehlers instantaneous trend (iTrend) indicator
 CCI - Commodity Channel Index  
 
 ##Misc Functions
-ToValueArray - Extracts a 1D slice of y-values
+ToValueArray - Extracts a 1D slice of y-values  
 ToValues - Extracts a 1D slice of y-values with an offset from the last datapoint
 
 
