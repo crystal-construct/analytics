@@ -140,10 +140,10 @@ func (ts *Series) ToValues(length int, offset int) []float64 {
 }
 
 //Shifts a dataset on the x and y axes
-func (ts *Series) Transpose(xoffset float64, yoffset float64) *Series {
+func (ts *Series) ApplyOffset(x float64, y float64) *Series {
 	newdata := make([][]float64, ts.Len)
 	for i, j := range ts.Data {
-		newdata[i] = []float64{j[0] + xoffset, j[1] + yoffset}
+		newdata[i] = []float64{j[0] + x, j[1] + y}
 	}
 	return NewSeriesFrom(newdata)
 }
