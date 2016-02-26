@@ -3,17 +3,22 @@ package analytics
 func (ts *Series) CommonChannelIndex(periodLength float64, numberOfPeriods int) *Series {
 	var constant float64 = 0.015
 	j := ts.MapReduce(
-		func(t *Series) []float64 {
-			return []float64{t.Data[t.Len-1][0], (t.Max + t.Min + t.Data[t.Len-1][1]) / 3}
+		func(t *Series) (x float64, y float64) {
+			x = t.x[t.Len-1]
+			y = (t.Max + t.Min + t.y[t.Len-1]) / 3
+			return
 		},
-		func(data [][]float64) *Series {
-			dataseries := NewSeriesFrom(data)
+		func(xdata []float64, ydata []float64) *Series {
+			dataseries := NewSeriesFrom(xdata, ydata)
 			sma := dataseries.Ma(3)
 			meandev := dataseries.MeanDev()
-			s := NewSeries()
-			for i := range data {
-				s.Add(data[i][0], (data[i][1]-sma.Data[i][1])/(constant*meandev))
+			ny := make([]float64, ts.Len)
+			nx := make([]float64, ts.Len)
+			copy(nx, ts.x)
+			for i := range xdata {
+				ny[i] = (ydata[i] - sma.y[i]) / (constant * meandev)
 			}
+			s := NewSeriesFrom(nx, ny)
 			return s
 		},
 		periodLength, numberOfPeriods)

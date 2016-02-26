@@ -7,12 +7,11 @@ interpolate or (depending on the algorithm) extrapolate data points.
 Simple example usage:  
 ```go
 	//Define a small dataset
-	d := [][]float64{
-		{1, 8}, {2, 6}, {3, 5}, {4, 5}, {5, 4}, {6, 3}, {7, 3}, {8, 2},
-	}
-
+	x := []float64{1, 2, 3, 4, 5, 6, 7, 8}
+	y := []float64{8, 6, 5, 5, 4, 3, 3, 2}
+	
 	//Use the dataset as a series
-	series1 := analytics.NewSeriesFrom(d)
+	series1 := analytics.NewSeriesFrom(x, y)
 
 	//Get a 3rd Order Polynomial fit for the series
 	fit := series1.FitPolynomial(3)
@@ -25,7 +24,9 @@ Simple example usage:
 	series2 := series1.Smoother(3)
 
 	//Display the underlying smoothed values
-	fmt.Println(series2.Data)
+	x1, y1 := series2.ToArrays()
+	fmt.Println(series2.x1)
+	fmt.Println(series2.y1)
 ```
 
 ##General Data Manipulation Functions  
@@ -48,8 +49,8 @@ ITrend - John Ehlers instantaneous trend (iTrend) indicator
 CCI - Commodity Channel Index  
 
 ##Misc Functions
-ToValueArray - Extracts a 1D slice of y-values  
-ToValues - Extracts a 1D slice of y-values with an offset from the last datapoint
+ToArrays - Extracts two 1D slices of values, one for x and one for y
+ToValues - As ToArrays, but takes an offset from the last datapoint
 
 
 ##Curve fit types
@@ -62,11 +63,11 @@ Gaussian
 Parabolic  
 
 ##Todo
+Tests!
 Correct and clean up attribution    
 Fix up Gaussian fit  
 Fix up Parabolic fit  
 Implement Cubic Spline  
 Implement 4PL  
 Cache sums for curve fit  
-Error handling  
-File routines to load and save / export in gnuplot format  
+Error handling

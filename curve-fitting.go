@@ -24,14 +24,15 @@ const (
 )
 
 func (ts *Series) FitExponential() (params FitParameters) {
-	xoffset := ts.Data[0][0] - 1
+	xoffset := ts.x[0] - 1
 	yoffset := ts.Min - 1
-	data := ts.Data
+	xdata := ts.x
+	ydata := ts.y
 	sum := []float64{0, 0, 0, 0, 0, 0}
 
-	for n := range data {
-		time := data[n][0] - xoffset
-		value := data[n][1] - yoffset
+	for n := range xdata {
+		time := xdata[n] - xoffset
+		value := ydata[n] - yoffset
 		sum[0] += time                           // X
 		sum[1] += value                          // Y
 		sum[2] += time * time * value            // XXY
@@ -60,15 +61,16 @@ func (ts *Series) FitExponential() (params FitParameters) {
  *
  */
 func (ts *Series) FitLinear() (params FitParameters) {
-	xoffset := ts.Data[0][0] - 1
+	xoffset := ts.x[0] - 1
 	yoffset := ts.Min - 1
-	data := ts.Data
+	xdata := ts.x
+	ydata := ts.y
 	sum := []float64{0, 0, 0, 0, 0}
-	N := float64(len(data))
+	N := float64(ts.Len)
 
-	for n := range data {
-		x := data[n][0] - xoffset
-		y := data[n][1] - yoffset
+	for n := range xdata {
+		x := xdata[n] - xoffset
+		y := ydata[n] - yoffset
 		sum[0] += x     //Σ(X)
 		sum[1] += y     //Σ(Y)
 		sum[2] += x * x //Σ(X^2)
@@ -88,14 +90,15 @@ func (ts *Series) FitLinear() (params FitParameters) {
 }
 
 func (ts *Series) FitLinearThroughOrigin() (params FitParameters) {
-	xoffset := ts.Data[0][0] - 1
+	xoffset := ts.x[0] - 1
 	yoffset := ts.Min - 1
-	data := ts.Data
+	xdata := ts.x
+	ydata := ts.y
 	sum := []float64{0, 0, 0, 0, 0}
 
-	for n := 0; n < len(data); n++ {
-		x := data[n][0] - xoffset
-		y := data[n][1] - yoffset
+	for n := 0; n < ts.Len; n++ {
+		x := xdata[n] - xoffset
+		y := ydata[n] - yoffset
 		sum[0] += x * x //sumSqX
 		sum[1] += x * y //sumXY
 	}
@@ -110,15 +113,16 @@ func (ts *Series) FitLinearThroughOrigin() (params FitParameters) {
 }
 
 func (ts *Series) FitLogarithmic() (params FitParameters) {
-	xoffset := ts.Data[0][0] - 1
+	xoffset := ts.x[0] - 1
 	yoffset := ts.Min - 1
-	data := ts.Data
+	xdata := ts.x
+	ydata := ts.y
 	var sum = []float64{0, 0, 0, 0}
-	N := float64(len(data))
+	N := float64(ts.Len)
 
-	for n := range data {
-		x := data[n][0] - xoffset
-		y := data[n][1] - yoffset
+	for n := range ts.x {
+		x := xdata[n] - xoffset
+		y := ydata[n] - yoffset
 		sum[0] += math.Log(x)
 		sum[1] += y * math.Log(x)
 		sum[2] += y
@@ -136,15 +140,16 @@ func (ts *Series) FitLogarithmic() (params FitParameters) {
 }
 
 func (ts *Series) FitPower() (params FitParameters) {
-	xoffset := ts.Data[0][0] - 1
+	xoffset := ts.x[0] - 1
 	yoffset := ts.Min - 1
-	data := ts.Data
+	xdata := ts.x
+	ydata := ts.y
 	var sum = []float64{0, 0, 0, 0}
-	N := float64(len(data))
+	N := float64(ts.Len)
 
-	for n := range data {
-		x := data[n][0] - xoffset
-		y := data[n][1] - yoffset
+	for n := range xdata {
+		x := xdata[n] - xoffset
+		y := ydata[n] - yoffset
 		sum[0] += math.Log(x)
 		sum[1] += math.Log(y) * math.Log(x)
 		sum[2] += math.Log(y)
@@ -162,24 +167,25 @@ func (ts *Series) FitPower() (params FitParameters) {
 }
 
 func (ts *Series) FitPolynomial(order int) (params FitParameters) {
-	xoffset := ts.Data[0][0] - 1
+	xoffset := ts.x[0] - 1
 	yoffset := ts.Min - 1
-	data := ts.Data
+	xdata := ts.x
+	ydata := ts.y
 	rhs := [][]float64{}
 	lhs := []float64{}
 	k := order + 1
 	a := float64(0)
 	var b float64 = 0
 	for i := 0; i < k; i++ {
-		for l := range data {
-			a += math.Pow(data[l][0]-xoffset, float64(i)) * (data[l][1] - yoffset)
+		for l := range ts.x {
+			a += math.Pow(xdata[l]-xoffset, float64(i)) * (ydata[l] - yoffset)
 		}
 		lhs = append(lhs, a)
 		a = 0
 		var c = []float64{}
 		for j := 0; j < k; j++ {
-			for l := range data {
-				b += math.Pow(data[l][0]-xoffset, float64(i+j))
+			for l := range xdata {
+				b += math.Pow(xdata[l]-xoffset, float64(i+j))
 			}
 			c = append(c, b)
 			b = 0
@@ -242,14 +248,15 @@ func Extrapolate(params FitParameters, x float64) float64 {
 }
 
 func (ts *Series) FitGaussianParabolic() (params []FitParameters) {
-	xoffset := ts.Data[0][0] - 1
+	xoffset := ts.x[0] - 1
 	yoffset := ts.Min - 1
-	data := ts.Data
-	var n float64 = float64(len(data))
+	xdata := ts.x
+	ydata := ts.y
+	var n float64 = float64(ts.Len)
 	var sumx, sumy, sumxy, sumx2, sumx3, sumx4, sumx2y float64
-	for _, i := range data {
-		x := i[0] - xoffset
-		y := i[1] - yoffset
+	for i := range ts.x {
+		x := xdata[i] - xoffset
+		y := ydata[i] - yoffset
 		lny := math.Log(y)
 		sumx += x
 		sumy += lny
@@ -286,12 +293,13 @@ func (ts *Series) FitGaussianParabolic() (params []FitParameters) {
 }
 
 func (ts *Series) FitLoess(bandwidth float64) (points *Series) {
-	data := ts.Data
-	xval := make([]float64, len(data))
-	yval := make([]float64, len(data))
-	for i, j := range data {
-		xval[i] = j[0]
-		yval[i] = j[1]
+	xdata := ts.x
+	ydata := ts.y
+	xval := make([]float64, ts.Len)
+	yval := make([]float64, ts.Len)
+	for i := range xdata {
+		xval[i] = xdata[i]
+		yval[i] = ydata[i]
 	}
 	var distinctX = array_unique(xval)
 
@@ -363,32 +371,28 @@ func (ts *Series) FitLoess(bandwidth float64) (points *Series) {
 		alpha := meanY - beta*meanX
 		res = append(res, beta*x+alpha)
 	}
-
-	res2 := [][]float64{}
-	for i, j := range xval {
-		res2 = append(res2, []float64{j, res[i]})
-	}
-	newts := NewSeriesFrom(res2)
+	newts := NewSeriesFrom(xval, res)
 	points = newts
 	return
 }
 
-func (ts *Series) CoefficientOfDetermination(pred [][]float64) float64 {
-	data := ts.Data
+func (ts *Series) CoefficientOfDetermination(pred *Series) float64 {
+	xdata := ts.x
+	ydata := ts.y
 	var sse, ssyy float64
-	for i := range data {
-		x := data[i][1]
-		ssyy += math.Pow(x-pred[i][1], 2)
-		sse += math.Pow(x-ts.Mean, 2)
+	for i := range xdata {
+		y := ydata[i]
+		ssyy += math.Pow(y-pred.y[i], 2)
+		sse += math.Pow(y-ts.Mean, 2)
 	}
 	return 1 - (ssyy / sse)
 }
 
 func (ts *Series) StandardError(pred [][]float64) float64 {
-	data := ts.Data
+	ydata := ts.y
 	var SE float64 = 0
-	for i := range data {
-		SE += math.Pow(data[i][1]-pred[i][1], 2)
+	for i := range ydata {
+		SE += math.Pow(ydata[i]-pred[i][1], 2)
 	}
 	SE = math.Sqrt(SE / (float64(ts.Len) - 2))
 
