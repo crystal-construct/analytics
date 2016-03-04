@@ -1,6 +1,6 @@
 # analytics
 Analytics and curve fitting library in go.  
-The library provides a Series structure that can be initialized with a [][]float64 containing x/y data.  
+The library provides a Series structure that can be initialized with two []float64 containing x/y data.  
 Once initialized, functions can be applied to create new Series, or curve fitting can be applied to
 interpolate or (depending on the algorithm) extrapolate data points.
 
