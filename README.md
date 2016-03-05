@@ -63,11 +63,9 @@ Gaussian
 Parabolic  
 
 ##Todo
-Tests!
-Correct and clean up attribution    
-Fix up Gaussian fit  
-Fix up Parabolic fit  
+Tests! (started)
+Fix up Gaussian fit (use scaling in addition to the offset) 
+Fix up Parabolic fit (use scaling in addition to the offset)  
 Implement Cubic Spline  
-Implement 4PL  
 Cache sums for curve fit  
 Error handling
