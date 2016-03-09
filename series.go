@@ -190,7 +190,11 @@ func (ts *Series) MapReduce(mapFunction func(*Series) (float64, float64), reduce
 		if pos == -1 {
 			continue
 		}
-		mappedx[p], mappedy[p] = mapFunction(ts.Slice(pos, end))
+		slice := ts.Slice(pos, end)
+		if slice.Len == 0 {
+			continue
+		}
+		mappedx[p], mappedy[p] = mapFunction(slice)
 		p++
 	}
 	return reduceFunction(mappedx[:p], mappedy[:p])
